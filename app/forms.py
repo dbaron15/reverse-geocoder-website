@@ -1,24 +1,23 @@
-from wtforms import SelectField, SelectMultipleField, SubmitField
+from wtforms import RadioField, SelectMultipleField, SubmitField, widgets
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed, DataRequired
 
+class MultiCheckboxField(SelectMultipleField):
+    """
+    A multiple-select, except displays a list of checkboxes.
+
+    Iterating the field will produce subfields, allowing custom rendering of
+    the enclosed checkbox fields.
+    """
+    widget = widgets.ListWidget(prefix_label=False)
+    option_widget = widgets.CheckboxInput()
 
 class UploadForm(FlaskForm):
     """File upload and shapefile selection form"""
 
     upload = FileField('CSV File', validators=[FileRequired(), FileAllowed(['csv'], 'Invalid File Type. Must be .csv')])
-    projection = SelectField('What projection is your data in?', validators=[DataRequired()], choices=[('wgs', 'Geographic'),
+    projection = RadioField('What projection is your data in?', validators=[DataRequired()], choices=[('wgs', 'Geographic'),
                                                                                                       ('stateplane', 'Long Island State Plane')])
-    selection = SelectMultipleField('Geographies to Join On', validators=[DataRequired()], choices=[("uhf34", "UHF34"),
-                                                                                                    ("uhf42", "UHF42"),
-                                                                                                    ("zcta", "Zip Code Tabulation Areas"),
-                                                                                                    ("precincts", "Police Precincts"),
-                                                                                                    ("ccd", "City Council Districts"),
-                                                                                                    ("uscong", "U.S. Congressional Districts"),
-                                                                                                    ("schooldist", "School Districts"),
-                                                                                                    ("file_uploads/nycd.shp", "Community Districts"),
-                                                                                                    ("nta", "Neighborhood Tabulation Areas"),
-                                                                                                    ("file_uploads/nyct2010.shp","2010 Census Tracks"),
-                                                                                                    ("census_blocks", "2010 Census Blocks"),
-                                                                                                    ("evaczone", "Hurricane Evacuation Zones")])
+    selection = MultiCheckboxField('Geographies to Join On', validators=[DataRequired()])
+    columns = MultiCheckboxField('Columns to Add', validators=[DataRequired()])
     submit = SubmitField("Process")

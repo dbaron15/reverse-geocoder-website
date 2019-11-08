@@ -7,7 +7,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 from flask import render_template, Response, request, redirect, url_for, send_file, flash
 from werkzeug.utils import secure_filename
-from app import app, forms, config
+from app import app, forms, models, config
 
 def csv_to_gdf(file):
     '''
@@ -51,8 +51,10 @@ def index():
 
 @app.route('/processing', methods=['GET', 'POST'])
 def home():
+    shp_choices = [(row.shpPath, row.shpName) for row in models.SHPTable.query.all()]
     form = forms.UploadForm()
-
+    form.selection.choices = shp_choices
+    column_choices = [(row.join_column, row.join_column) for row in models.SHPTable.query.filter_by()]
     if form.validate_on_submit():
         file = form.upload.data
         shp_list = form.selection.data
