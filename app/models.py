@@ -1,16 +1,13 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-
-db = SQLAlchemy()
+from app import db
 
 db.Model.metadata.reflect(db.engine)
 
-class SHPTable(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255))
-    path = db.Column(db.String(255), unique=True)
-    join_column = db.Column(db.String(255))
+class Shapefiles(db.Model):
+    __table__ = db.Model.metadata.tables['Shapefiles']
+    __table_args__ = {'extend_existing': True}
 
 
 

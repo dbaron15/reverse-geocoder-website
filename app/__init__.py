@@ -9,9 +9,9 @@ from flask_security import Security
 
 app = Flask(__name__)
 app.config.from_object(Config)
-login = LoginManager(app)
+# login = LoginManager(app)
 db = SQLAlchemy(app)
-bs = Bootstrap(app)
-admin = Admin(app, name='revgeocoder')
+# bs = Bootstrap(app)
+# admin = Admin(app, name='revgeocoder')
 
-from app import views
+from app import views, models

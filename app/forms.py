@@ -18,6 +18,5 @@ class UploadForm(FlaskForm):
     upload = FileField('CSV File', validators=[FileRequired(), FileAllowed(['csv'], 'Invalid File Type. Must be .csv')])
     projection = RadioField('What projection is your data in?', validators=[DataRequired()], choices=[('wgs', 'Geographic'),
                                                                                                       ('stateplane', 'Long Island State Plane')])
-    selection = MultiCheckboxField('Geographies to Join On', validators=[DataRequired()])
-    columns = MultiCheckboxField('Columns to Add', validators=[DataRequired()])
+    selection = MultiCheckboxField('Geographies to Join On', validators=[DataRequired()], coerce=int)
     submit = SubmitField("Process")

@@ -7,7 +7,8 @@ import geopandas as gpd
 from shapely.geometry import Point
 from flask import render_template, Response, request, redirect, url_for, send_file, flash
 from werkzeug.utils import secure_filename
-from app import app, forms, models, config
+from app import app, forms
+from app.models import Shapefiles
 
 def csv_to_gdf(file):
     '''
@@ -20,16 +21,20 @@ def csv_to_gdf(file):
     gdf = gpd.GeoDataFrame(df, crs=crs, geometry=geometry)
     return gdf
 
-def get_paths(shps):
+def get_paths_n_joincol(shps):
     '''
     Takes a list of shapefile names and matches them
-    with their full system paths on the server
+    with their full system paths and join columns on the server
     '''
     paths = []
+    join_cols = []
     for shp in shps:
-        file = glob(str(shp))
-        paths.append(file[0])
-    return paths
+        file = Shapefiles.query.filter_by(rowid=shp).first()
+        paths.append(str(file.syspath))
+        join_cols.append(str(file.join_column).lower())
+        if file.join_column2 is not None:
+            join_cols.append(str(file.join_column2).lower())
+    return paths, join_cols
 
 def sjoin_no_index(left, right):
     '''
@@ -37,7 +42,7 @@ def sjoin_no_index(left, right):
     index_left and index_right columns.
     '''
     sjoin = gpd.sjoin(left, right, how='left')
-    for column in ['index_left', 'index_right']:
+    for column in ['index_', 'index_']:
         try:
             sjoin.drop(column, axis=1, inplace=True)
         except KeyError:
@@ -51,18 +56,21 @@ def index():
 
 @app.route('/processing', methods=['GET', 'POST'])
 def home():
-    shp_choices = [(row.shpPath, row.shpName) for row in models.SHPTable.query.all()]
+    shp_choices = [(row.rowid, row.name) for row in Shapefiles.query.all()]
     form = forms.UploadForm()
     form.selection.choices = shp_choices
-    column_choices = [(row.join_column, row.join_column) for row in models.SHPTable.query.filter_by()]
     if form.validate_on_submit():
         file = form.upload.data
         shp_list = form.selection.data
         proj = form.projection.data
-        shp_paths = get_paths(shp_list)
+        shp_paths, join_cols = get_paths_n_joincol(shp_list)
         f = file.stream.read()
         lines = BytesIO(f)
         org = csv_to_gdf(lines)
+        org_cols = list(org.columns)
+        org_cols.remove('geometry')
+        org_cols = [name.lower() for name in org_cols]
+        new_cols = org_cols + join_cols
 
         input_frames = [gpd.read_file(path) for path in shp_paths]
         if proj == 'wgs':
@@ -73,7 +81,9 @@ def home():
             input_frames = new_input_frames
         input_frames.insert(0, org)
         sjoin = reduce(sjoin_no_index, input_frames)
+        sjoin.columns = sjoin.columns.str.lower()
         sjoin.drop('geometry', axis=1, inplace=True)
+        sjoin = sjoin[new_cols]
         result = pd.DataFrame(sjoin).to_csv()
 
         return Response(result, mimetype="text/csv",
