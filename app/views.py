@@ -42,7 +42,7 @@ def sjoin_no_index(left, right):
     index_left and index_right columns.
     '''
     sjoin = gpd.sjoin(left, right, how='left')
-    for column in ['index_', 'index_']:
+    for column in ['index_left', 'index_right']:
         try:
             sjoin.drop(column, axis=1, inplace=True)
         except KeyError:
@@ -82,7 +82,15 @@ def home():
         input_frames.insert(0, org)
         sjoin = reduce(sjoin_no_index, input_frames)
         sjoin.columns = sjoin.columns.str.lower()
+        for col in list(sjoin.columns):
+            if col.endswith('_left'):
+                sjoin.rename(columns={col : col[:-5]}, inplace=True)
+            if col.endswith('_right'):
+                sjoin.rename(columns={col : col[:-6]}, inplace=True)
+            else:
+                pass
         sjoin.drop('geometry', axis=1, inplace=True)
+        sjoin = sjoin.loc[:, ~sjoin.columns.duplicated()]
         sjoin = sjoin[new_cols]
         result = pd.DataFrame(sjoin).to_csv()
 
