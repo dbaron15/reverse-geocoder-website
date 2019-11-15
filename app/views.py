@@ -41,7 +41,7 @@ def sjoin_no_index(left, right):
     Takes two GeoDataFrames, do a spatial join, and return without the
     index_left and index_right columns.
     '''
-    sjoin = gpd.sjoin(left, right, how='left')
+    sjoin = gpd.sjoin(left, right, how='left', op='within')
     for column in ['index_left', 'index_right']:
         try:
             sjoin.drop(column, axis=1, inplace=True)
@@ -92,7 +92,8 @@ def home():
         sjoin.drop('geometry', axis=1, inplace=True)
         sjoin = sjoin.loc[:, ~sjoin.columns.duplicated()]
         sjoin = sjoin[new_cols]
-        result = pd.DataFrame(sjoin).to_csv()
+        result = pd.DataFrame(sjoin).to_csv(index=False)
+        flash('Please wait, your file is being processed and will download automatically when complete.')
 
         return Response(result, mimetype="text/csv",
                         headers={"Content-disposition": "attachment; filename=output.csv"})
