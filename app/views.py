@@ -5,6 +5,8 @@ from glob import glob
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
+import folium
+from folium.plugins import FastMarkerCluster
 from flask import render_template, Response, request, redirect, url_for, send_file, flash
 from werkzeug.utils import secure_filename
 from app import app, forms
@@ -49,6 +51,22 @@ def sjoin_no_index(left, right):
             pass
     return sjoin
 
+def make_result_map(gdf):
+    folium_map = folium.Map(
+        location=[gdf['lat'].mean(), gdf['lon'].mean()],
+        tiles='CartoDB positron',
+        zoom_start=10,
+        width='75%',
+        height='75%'
+    )
+    callback = ('function (row) {'
+                'var circle = L.circle(new L.LatLng(row[0], row[1]), {color: "red",  radius: 10000});'
+                'return circle};')
+    folium_map.add_child(FastMarkerCluster(gdf[['lat', 'lon']].values.tolist()))
+    folium_map.save('app/templates/complete_map.html')
+    # return folium_map.to_json()
+
+
 @app.route('/')
 @app.route('/index')
 def index():
@@ -92,19 +110,35 @@ def home():
         sjoin.drop('geometry', axis=1, inplace=True)
         sjoin = sjoin.loc[:, ~sjoin.columns.duplicated()]
         sjoin = sjoin[new_cols]
-        result = pd.DataFrame(sjoin).to_csv(index=False)
+        make_result_map(sjoin)
+        # result = pd.DataFrame(sjoin).to_csv(index=False, encoding='utf-8')
         flash('Please wait, your file is being processed and will download automatically when complete.')
 
-        return Response(result, mimetype="text/csv",
-                        headers={"Content-disposition": "attachment; filename=output.csv"})
-        #return render_template('success.html')
+        return render_template('success.html', sjoin=sjoin)
+
+        # return Response(result, mimetype="text/csv",
+        #                 headers={"Content-disposition": "attachment; filename=output.csv"})
 
     return render_template('form.html', form=form)
 
-    
+# @app.route('/make_map/<gdf>')
+# def make_map(sjoin):
+#     if request.method == 'GET':
+#         make_result_map(sjoin)
+
+@app.route('/download_file/<result>')
+def download(sjoin):
+    if request.method == 'GET':
+        result = pd.DataFrame(sjoin).to_csv(index=False, encoding='utf-8')
+        return Response(result, mimetype="text/csv",
+                        headers={"Content-disposition": "attachment; filename=output.csv"})
+
+
 @app.errorhandler(404)
 def not_found(error):
     return render_template('404.html'), 404
+
+
 @app.errorhandler(500)
 def something_wrong(error):
     return render_template('500.html'), 500
