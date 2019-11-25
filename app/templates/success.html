@@ -1,16 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
-    <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
-    <meta charset="UTF-8">
-    <title>Success!</title>
+<!--    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />-->
+<!--    <script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>-->
+<!--    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <title>Success!</title>-->
+<!--    <style>-->
+<!--    #my-map {-->
+<!--	width:960px;-->
+<!--	height:500px;-->
+<!--}-->
+<!--</style>-->
 </head>
 <body>
 <div>Home: <a href="/index">Home</a></div>
+<!--<div id="my-map"></div>-->
 <h1>Report Generated Successfully</h1>
-<a href="{{url_for('download',result=result)}}">Download</a>
+<a href="{{url_for('download_file',dict=dict,result_id=result_id)}}">Download</a>
 
-{% include "complete_map.html" %}
+<!--<script>-->
+<!--window.onload = function () {-->
+<!--    var basemap = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {-->
+<!--		attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'-->
+<!--	});-->
+
+<!--    var geojson = L.geoJson("{{result}}", {-->
+<!--      onEachFeature: function (feature, layer) {-->
+<!--        layer.bindPopup(feature.properties);-->
+<!--      }-->
+<!--    });-->
+
+<!--    var map = L.map('my-map')-->
+<!--    .fitBounds(geojson.getBounds());-->
+<!--//    .setView([0.0,-10.0], 2);-->
+
+<!--    basemap.addTo(map);-->
+<!--    geojson.addTo(map);-->
+<!--  });-->
+
+<!--};-->
+<!--</script>-->
+
 </body>
 </html>

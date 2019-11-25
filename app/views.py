@@ -1,14 +1,14 @@
 import os
 from io import BytesIO
+import uuid
 from functools import reduce
-from glob import glob
+import json
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
 import folium
 from folium.plugins import FastMarkerCluster
-from flask import render_template, Response, request, redirect, url_for, send_file, flash
-from werkzeug.utils import secure_filename
+from flask import render_template, Response, request, redirect, url_for, send_file, flash, jsonify
 from app import app, forms
 from app.models import Shapefiles
 
@@ -50,21 +50,50 @@ def sjoin_no_index(left, right):
         except KeyError:
             pass
     return sjoin
+#
+# def make_result_map(gdf):
+#     folium_map = folium.Map(
+#         location=[gdf['lat'].mean(), gdf['lon'].mean()],
+#         tiles='CartoDB positron',
+#         zoom_start=10,
+#         width='75%',
+#         height='75%'
+#     )
+#     callback = ('function (row) {'
+#                 'var circle = L.circle(new L.LatLng(row[0], row[1]), {color: "red",  radius: 10000});'
+#                 'return circle};')
+#     folium_map.add_child(FastMarkerCluster(gdf[['lat', 'lon']].values.tolist()))
+#     folium_map.save('app/templates/complete_map.html')
+#     # return folium_map.to_json()
 
-def make_result_map(gdf):
-    folium_map = folium.Map(
-        location=[gdf['lat'].mean(), gdf['lon'].mean()],
-        tiles='CartoDB positron',
-        zoom_start=10,
-        width='75%',
-        height='75%'
-    )
-    callback = ('function (row) {'
-                'var circle = L.circle(new L.LatLng(row[0], row[1]), {color: "red",  radius: 10000});'
-                'return circle};')
-    folium_map.add_child(FastMarkerCluster(gdf[['lat', 'lon']].values.tolist()))
-    folium_map.save('app/templates/complete_map.html')
-    # return folium_map.to_json()
+def df_2_geojson(df, properties, lat='lat', lon='lon'):
+    '''
+    Turn a dataframe containing point data into a geojson formatted python dictionary
+    '''
+
+    # create a new python dict to contain our geojson data, using geojson format
+    geojson = {'type': 'FeatureCollection', 'features': []}
+
+    # loop through each row in the dataframe and convert each row to geojson format
+    for _, row in df.iterrows():
+        # create a feature template to fill in
+        feature = {'type': 'Feature',
+                   'properties': {},
+                   'geometry': {'type': 'Point',
+                                'coordinates': []}}
+
+        # fill in the coordinates
+        feature['geometry']['coordinates'] = [row[lon], row[lat]]
+
+        # for each column, get the value and add it as a new feature property
+        for prop in properties:
+            feature['properties'][prop] = row[prop]
+
+        # add this feature (aka, converted dataframe row) to the list of features inside our dict
+        geojson['features'].append(feature)
+    geojson_str = json.dumps(geojson, indent=2)
+
+    return geojson, geojson_str
 
 
 @app.route('/')
@@ -110,26 +139,29 @@ def home():
         sjoin.drop('geometry', axis=1, inplace=True)
         sjoin = sjoin.loc[:, ~sjoin.columns.duplicated()]
         sjoin = sjoin[new_cols]
-        make_result_map(sjoin)
+        result = df_2_geojson(sjoin, properties=new_cols)
+        # make_result_map(sjoin)
         # result = pd.DataFrame(sjoin).to_csv(index=False, encoding='utf-8')
         flash('Please wait, your file is being processed and will download automatically when complete.')
+        result_id = uuid.uuid4()
+        dict = {str(result_id) : sjoin}
 
-        return render_template('success.html', sjoin=sjoin)
+        return render_template('success.html', dict=dict, result_id=list(dict)[0])
 
         # return Response(result, mimetype="text/csv",
         #                 headers={"Content-disposition": "attachment; filename=output.csv"})
-
-    return render_template('form.html', form=form)
+    else:
+        return render_template('form.html', form=form)
 
 # @app.route('/make_map/<gdf>')
 # def make_map(sjoin):
 #     if request.method == 'GET':
 #         make_result_map(sjoin)
 
-@app.route('/download_file/<result>')
-def download(sjoin):
+@app.route('/download_file/<result_id>')
+def download_file(dict, result_id):
     if request.method == 'GET':
-        result = pd.DataFrame(sjoin).to_csv(index=False, encoding='utf-8')
+        result = pd.DataFrame(dict[result_id]).to_csv(index=False, encoding='utf-8')
         return Response(result, mimetype="text/csv",
                         headers={"Content-disposition": "attachment; filename=output.csv"})
 
