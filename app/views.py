@@ -8,7 +8,7 @@ import geopandas as gpd
 from shapely.geometry import Point
 import folium
 from folium.plugins import FastMarkerCluster
-from flask import render_template, Response, request, redirect, url_for, send_file, flash, jsonify
+from flask import render_template, Response, request, redirect, url_for, send_file, flash, session, g
 from app import app, forms
 from app.models import Shapefiles
 
@@ -93,7 +93,7 @@ def df_2_geojson(df, properties, lat='lat', lon='lon'):
         geojson['features'].append(feature)
     geojson_str = json.dumps(geojson, indent=2)
 
-    return geojson, geojson_str
+    return geojson
 
 
 @app.route('/')
@@ -123,7 +123,7 @@ def home():
         if proj == 'wgs':
             new_input_frames = []
             for gdf in input_frames:
-                gdf = gdf.to_crs(epsg=4326)
+                gdf.crs = org.crs
                 new_input_frames.append(gdf)
             input_frames = new_input_frames
         input_frames.insert(0, org)
@@ -142,11 +142,12 @@ def home():
         result = df_2_geojson(sjoin, properties=new_cols)
         # make_result_map(sjoin)
         # result = pd.DataFrame(sjoin).to_csv(index=False, encoding='utf-8')
-        flash('Please wait, your file is being processed and will download automatically when complete.')
-        result_id = uuid.uuid4()
-        dict = {str(result_id) : sjoin}
 
-        return render_template('success.html', dict=dict, result_id=list(dict)[0])
+        result_id = uuid.uuid4()
+        dict = {str(result_id) : sjoin.to_json(orient='split')}
+        session['dict'] = dict
+
+        return render_template('success.html', result_id=list(dict)[0], result=result)
 
         # return Response(result, mimetype="text/csv",
         #                 headers={"Content-disposition": "attachment; filename=output.csv"})
@@ -158,10 +159,15 @@ def home():
 #     if request.method == 'GET':
 #         make_result_map(sjoin)
 
+@app.before_request
+def before_request():
+    g.dict = dict
+
 @app.route('/download_file/<result_id>')
-def download_file(dict, result_id):
+def download_file(result_id):
     if request.method == 'GET':
-        result = pd.DataFrame(dict[result_id]).to_csv(index=False, encoding='utf-8')
+        dict = session.get('dict', None)
+        result = pd.read_json(dict[result_id], orient='split').to_csv(index=False, encoding='utf-8')
         return Response(result, mimetype="text/csv",
                         headers={"Content-disposition": "attachment; filename=output.csv"})
 
