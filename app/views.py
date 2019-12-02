@@ -77,21 +77,20 @@ def df_2_geojson(df, properties, lat='lat', lon='lon'):
     # loop through each row in the dataframe and convert each row to geojson format
     for _, row in df.iterrows():
         # create a feature template to fill in
-        feature = {'type': 'Feature',
-                   'properties': {},
-                   'geometry': {'type': 'Point',
-                                'coordinates': []}}
+        feature = {"type": "Feature",
+                   "properties": {},
+                   "geometry": {"type": "Point",
+                                "coordinates": []}}
 
         # fill in the coordinates
-        feature['geometry']['coordinates'] = [row[lon], row[lat]]
+        feature["geometry"]["coordinates"] = [row[lon], row[lat]]
 
         # for each column, get the value and add it as a new feature property
         for prop in properties:
-            feature['properties'][prop] = row[prop]
+            feature["properties"][prop] = row[prop]
 
         # add this feature (aka, converted dataframe row) to the list of features inside our dict
-        geojson['features'].append(feature)
-    geojson_str = json.dumps(geojson, indent=2)
+        geojson["features"].append(feature)
 
     return geojson
 
@@ -103,6 +102,7 @@ def index():
 
 @app.route('/processing', methods=['GET', 'POST'])
 def home():
+    hold_message = "Please wait, your results are loading..."
     shp_choices = [(row.rowid, row.name) for row in Shapefiles.query.all()]
     form = forms.UploadForm()
     form.selection.choices = shp_choices
@@ -123,7 +123,7 @@ def home():
         if proj == 'wgs':
             new_input_frames = []
             for gdf in input_frames:
-                gdf.crs = org.crs
+                gdf = gdf.to_crs(org.crs)
                 new_input_frames.append(gdf)
             input_frames = new_input_frames
         input_frames.insert(0, org)
@@ -144,10 +144,10 @@ def home():
         # result = pd.DataFrame(sjoin).to_csv(index=False, encoding='utf-8')
 
         result_id = uuid.uuid4()
-        dict = {str(result_id) : sjoin.to_json(orient='split')}
-        session['dict'] = dict
+        result_dict = {str(result_id) : sjoin.to_json(orient='split')}
+        session['dict'] = result_dict
 
-        return render_template('success.html', result_id=list(dict)[0], result=result)
+        return render_template('success.html', result_id=list(result_dict)[0], result=result)
 
         # return Response(result, mimetype="text/csv",
         #                 headers={"Content-disposition": "attachment; filename=output.csv"})
@@ -159,18 +159,13 @@ def home():
 #     if request.method == 'GET':
 #         make_result_map(sjoin)
 
-@app.before_request
-def before_request():
-    g.dict = dict
-
 @app.route('/download_file/<result_id>')
 def download_file(result_id):
     if request.method == 'GET':
-        dict = session.get('dict', None)
-        result = pd.read_json(dict[result_id], orient='split').to_csv(index=False, encoding='utf-8')
-        return Response(result, mimetype="text/csv",
+        result_dict = session.get('dict', None)
+        output = pd.read_json(result_dict[result_id], orient='split').to_csv(index=False, encoding='utf-8')
+        return Response(output, mimetype="text/csv",
                         headers={"Content-disposition": "attachment; filename=output.csv"})
-
 
 @app.errorhandler(404)
 def not_found(error):

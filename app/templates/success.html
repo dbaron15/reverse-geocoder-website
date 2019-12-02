@@ -4,6 +4,11 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+	<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster-src.js"></script>
     <meta charset="UTF-8">
     <title>Success!</title>
     <style>
@@ -22,34 +27,26 @@
 <script type="text/javascript">
 window.onload = function () {
 
-   var geojson = L.geoJSON("{{result}}", {
+   var geojson = L.geoJSON({{ result | tojson | safe}}, {
      onEachFeature: function (feature, layer) {
         layer.bindPopup(feature.properties);
      }
    });
 
    var map = L.map('my-map', {
-     center: [40.737, -73.923],
-     zoom: 8
+     center: geojson.getBounds().getCenter()
    });
 
    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
 	 attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
    }).addTo(map);
 
-   geojson.addTo(map);
+   var markers = L.markerClusterGroup();
+   markers.addLayer(geojson);
 
-<!--    var geojson = L.geoJson({{result}}, {-->
-<!--      onEachFeature: function (feature, layer) {-->
-<!--        layer.bindPopup(feature.properties);-->
-<!--      }-->
-<!--    });-->
-
-<!--    var map = L.map('my-map')-->
-<!--    .fitBounds(geojson.getBounds());-->
-<!--//    .setView([0.0,-10.0], 2);-->
-
-<!--    geojson.addTo(map);-->
+<!--   geojson.addTo(map);-->
+   map.addLayer(markers);
+   map.fitBounds(markers.getBounds().pad(0.5));
   };
 </script>
 
