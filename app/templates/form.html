@@ -1,44 +1,60 @@
-<!doctype html>
-<html>
-<body>
-<div>Home: <a href="/index">Home</a></div>
-<h2 style = "text-align: center;">Upload Form</h2>
-
-{% for message in form.upload.errors %}
-<div>{{ message }}</div>
-{% endfor %}
-
-{% for message in form.projection.errors %}
-<div>{{ message }}</div>
-{% endfor %}
-
-{% for message in form.selection.errors %}
-<div>{{ message }}</div>
-{% endfor %}
-
-<form method='POST' action='' enctype=multipart/form-data>
-    <fieldset>
-        <legend>Upload Form</legend>
-        {{ form.hidden_tag() }}
-
-        <div style = font-size:20px; font-weight:bold; margin-left:150px;>
-            {{ form.upload.label }}<br>
-            {{ form.upload }}
-            <br>
-
-            {{ form.projection.label }}<br>
-            {{ form.projection }}
-            <br>
-
-            {{ form.selection.label }}<br>
-            {{ form.selection }}
-            <br>
-
-            {{ form.submit }}
-            <div>{{ hold_message }}</div>
-        </div>
-
-    </fieldset>
+{% extends 'index.html' %}
+{% import 'macros.html' as macros %}
+{% from 'bootstrap/form.html' import render_field %}
+{% block content %}
+    <div>
+        <div class="container">
+<form method="post">
+    {{ form.csrf_token() }}
+    {{ render_field(form.upload) }}
+    {{ render_field(form.projection) }}
+    {{ render_field(form.selection) }}
+    {{ render_field(form.submit) }}
 </form>
-</body>
-</html>
+        </div>
+    </div>
+{% endblock content %}
+<!--<!doctype html>-->
+<!--<html>-->
+<!--<body>-->
+<!--<div>Home: <a href="/index">Home</a></div>-->
+<!--<h2 style = "text-align: center;">Upload Form</h2>-->
+
+<!--{% for message in form.upload.errors %}-->
+<!--<div>{{ message }}</div>-->
+<!--{% endfor %}-->
+
+<!--{% for message in form.projection.errors %}-->
+<!--<div>{{ message }}</div>-->
+<!--{% endfor %}-->
+
+<!--{% for message in form.selection.errors %}-->
+<!--<div>{{ message }}</div>-->
+<!--{% endfor %}-->
+
+<!--<form method='POST' action='' enctype=multipart/form-data>-->
+<!--    <fieldset>-->
+<!--        <legend>Upload Form</legend>-->
+<!--        {{ form.hidden_tag() }}-->
+
+<!--        <div style = font-size:20px; font-weight:bold; margin-left:150px;>-->
+<!--            {{ form.upload.label }}<br>-->
+<!--            {{ form.upload }}-->
+<!--            <br>-->
+
+<!--            {{ form.projection.label }}<br>-->
+<!--            {{ form.projection }}-->
+<!--            <br>-->
+
+<!--            {{ form.selection.label }}<br>-->
+<!--            {{ form.selection }}-->
+<!--            <br>-->
+
+<!--            {{ form.submit }}-->
+<!--            <div>{{ hold_message }}</div>-->
+<!--        </div>-->
+
+<!--    </fieldset>-->
+<!--</form>-->
+<!--</body>-->
+<!--</html>-->

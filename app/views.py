@@ -1,13 +1,12 @@
-import os
+import tempfile
+import pickle
+import shutil
 from io import BytesIO
 import uuid
 from functools import reduce
-import json
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
-import folium
-from folium.plugins import FastMarkerCluster
 from flask import render_template, Response, request, redirect, url_for, send_file, flash, session, g
 from app import app, forms
 from app.models import Shapefiles
@@ -102,7 +101,6 @@ def index():
 
 @app.route('/processing', methods=['GET', 'POST'])
 def home():
-    hold_message = "Please wait, your results are loading..."
     shp_choices = [(row.rowid, row.name) for row in Shapefiles.query.all()]
     form = forms.UploadForm()
     form.selection.choices = shp_choices
@@ -145,7 +143,10 @@ def home():
 
         result_id = uuid.uuid4()
         result_dict = {str(result_id) : sjoin.to_json(orient='split')}
-        session['dict'] = result_dict
+        session['tempdir'] = tempfile.mkdtemp()
+        outfile = open(session['tempdir'] + '/filename', 'wb')
+        pickle.dump(result_dict, outfile)
+        outfile.close()
 
         return render_template('success.html', result_id=list(result_dict)[0], result=result)
 
@@ -162,8 +163,12 @@ def home():
 @app.route('/download_file/<result_id>')
 def download_file(result_id):
     if request.method == 'GET':
-        result_dict = session.get('dict', None)
+        infile = open(session['tempdir'] + '/filename', 'rb')
+        result_dict = pickle.load(infile)
+        infile.close()
         output = pd.read_json(result_dict[result_id], orient='split').to_csv(index=False, encoding='utf-8')
+        shutil.rmtree(session['tempdir'])
+        session.pop('tempdir', None)
         return Response(output, mimetype="text/csv",
                         headers={"Content-disposition": "attachment; filename=output.csv"})
 

@@ -29,12 +29,16 @@ window.onload = function () {
 
    var geojson = L.geoJSON({{ result | tojson | safe}}, {
      onEachFeature: function (feature, layer) {
-        layer.bindPopup(feature.properties);
+       var popupContent = '<table>';
+       for (var p in feature.properties) {
+         popupContent += '<tr><td>' + p + '</td><td>'+ feature.properties[p] + '</td></tr>';
+       }
+       layer.bindPopup(popupContent);
      }
    });
 
    var map = L.map('my-map', {
-     center: geojson.getBounds().getCenter()
+<!--     center: geojson.getBounds().getCenter()-->
    });
 
    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
@@ -46,7 +50,7 @@ window.onload = function () {
 
 <!--   geojson.addTo(map);-->
    map.addLayer(markers);
-   map.fitBounds(markers.getBounds().pad(0.5));
+   map.fitBounds(markers.getBounds());
   };
 </script>
 
