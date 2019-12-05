@@ -1,19 +1,19 @@
 {% extends 'index.html' %}
-{% import 'macros.html' as macros %}
-{% from 'bootstrap/form.html' import render_field %}
+{% import 'bootstrap/wtf.html' as wtf %}
 {% block content %}
-    <div>
-        <div class="container">
-<form method="post">
-    {{ form.csrf_token() }}
-    {{ render_field(form.upload) }}
-    {{ render_field(form.projection) }}
-    {{ render_field(form.selection) }}
-    {{ render_field(form.submit) }}
-</form>
-        </div>
+<div class="container">
+        <h1>Upload Form</h1>
+        <form method='POST' action='' enctype=multipart/form-data>
+            {{ form.hidden_tag() }}
+            {{ wtf.form_field(form.upload) }}
+            {{ form.projection.label }}
+            {{ wtf.form_field(form.projection) }}
+            {{ form.selection.label }}
+            {{ form.selection }}
+            {{ form.submit(class_="btn btn-primary") }}
+        </form>
     </div>
-{% endblock content %}
+{% endblock %}
 <!--<!doctype html>-->
 <!--<html>-->
 <!--<body>-->

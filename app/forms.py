@@ -15,8 +15,8 @@ class MultiCheckboxField(SelectMultipleField):
 class UploadForm(FlaskForm):
     """File upload and shapefile selection form"""
 
-    upload = FileField('CSV File', validators=[FileRequired(), FileAllowed(['csv'], 'Invalid File Type. Must be .csv')])
-    projection = RadioField('What projection is your data in?', validators=[DataRequired()], choices=[('wgs', 'Geographic'),
+    upload = FileField('Choose Your CSV File', validators=[FileRequired(), FileAllowed(['csv'], 'Invalid File Type. Must be .csv')])
+    projection = RadioField('What Projection is Your Data In?', validators=[DataRequired()], choices=[('wgs', 'Geographic'),
                                                                                                       ('stateplane', 'Long Island State Plane')])
     selection = MultiCheckboxField('Geographies to Join On', validators=[DataRequired()], coerce=int)
     submit = SubmitField("Process")

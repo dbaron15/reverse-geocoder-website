@@ -1,28 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/"></script>
+{% extends 'index.html' %}
+{% block title %}Success!{% endblock %}
 
+{% block head %}
+{{ super() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
 	<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-	<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster-src.js"></script>
-    <meta charset="UTF-8">
-    <title>Success!</title>
-    <style>
+
+<style>
     #my-map {
 	width:1080px;
 	height:700px;
+	margin: 0 auto 0 auto;
 }
 </style>
-</head>
-<body>
-<div>Home: <a href="/index">Home</a></div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
 <div id="my-map"></div>
-<h1>Report Generated Successfully</h1>
-<a href="{{url_for('download_file',result_id=result_id)}}">Download</a>
+<h1 align="center">Report Generated Successfully</h1>
+    <h3 align="center"> Click the download button below to download your CSV</h3>
+    <div style="text-align: center;">
+    <a class="btn btn-success btn-lg" href="{{url_for('download_file',result_id=result_id)}}" role="button">Download CSV</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+
+<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster-src.js"></script>
 
 <script type="text/javascript">
 window.onload = function () {
@@ -53,6 +64,4 @@ window.onload = function () {
    map.fitBounds(markers.getBounds());
   };
 </script>
-
-</body>
-</html>
+{% endblock %}

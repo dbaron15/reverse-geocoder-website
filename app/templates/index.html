@@ -1,15 +1,30 @@
-{% extends "base.html" %}
+{% extends "bootstrap/base.html" %}
 {% block title %}NYC Reverse Geocoder{% endblock %}
 
+  {% block navbar %}
+<nav class="navbar">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="{{ url_for('index') }}">Reverse Geocoder</a>
+            </div>
+                <ul class="nav navbar-nav">
+                    <li><a href="{{ url_for('index') }}">{{ ('Home') }}</a></li>
+                    <li><a href="{{ url_for('home') }}">{{ ('Process Your CSV Here!') }}</a></li>
+                </ul> </div>
+</nav>
+{% endblock %}
+
+
 {% block content %}
+
 <div class="container-fluid">
   <hr>
         <h1 align="center">NYC Reverse Geocoding Website</h1>
         <h3 align="center">The purpose of this website is to allow users to upload a CSV with coordinate data, select the relevant
         New York City administrative boundaries they would like to see associated with their data, and return that CSV
             with each line having the relevant NYC geography data appended to it.</h3><br>
-            <ol>
            <h4>
+               <ol>
                <li>To get started, you must have a CSV file with latitude and longitude data.</li><br>
                 <b>NOTE: The latitude column MUST be named Lat and the longitude column MUST be named Lon.</b><br><br>
             <li>Click <a href="/processing">here</a> to process your CSV file.</li><br>
@@ -17,8 +32,8 @@
             <li>Select the projection your data is in, whether in decimal degrees (Geographic) or in State Plane.</li><br>
             <li>Check off the geographies you would like appended to your data. You can select as many as you'd like.</li><br>
             <li>Hit "Process". Your updated CSV will download automatically when the process is complete.</li>
-            </h4>
-            </ol>
+               </ol>
+           </h4>
 </div>
 {% endblock %}
 
