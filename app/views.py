@@ -11,14 +11,17 @@ from flask import render_template, Response, request, redirect, url_for, send_fi
 from app import app, forms
 from app.models import Shapefiles
 
-def csv_to_gdf(file):
+def csv_to_gdf(file, proj):
     '''
     Takes a CSV with latitude and longitude columns
     and converts it to a GeoDataFrame
     '''
     df = pd.read_csv(file, delimiter=",")
     geometry = [Point(xy) for xy in zip(df.Lon, df.Lat)]
-    crs = {'init': 'epsg:4326'}
+    if proj == 'wgs':
+        crs = {'init': 'epsg:4326'}
+    if proj == 'stateplane':
+        crs = {'init': 'epsg:2263'}
     gdf = gpd.GeoDataFrame(df, crs=crs, geometry=geometry)
     return gdf
 
@@ -65,10 +68,21 @@ def sjoin_no_index(left, right):
 #     folium_map.save('app/templates/complete_map.html')
 #     # return folium_map.to_json()
 
-def df_2_geojson(df, properties, lat='lat', lon='lon'):
+def df_2_geojson(df, properties, proj):
     '''
     Turn a dataframe containing point data into a geojson formatted python dictionary
     '''
+
+    if proj == 'stateplane':
+        df = df.to_crs(epsg='4326')
+        df = df.assign(lat2=df.geometry.y)
+        df = df.assign(lon2=df.geometry.x)
+        lat = 'lat2'
+        lon = 'lon2'
+    else:
+        df = df
+        lat = 'lat'
+        lon = 'lon'
 
     # create a new python dict to contain our geojson data, using geojson format
     geojson = {'type': 'FeatureCollection', 'features': []}
@@ -111,19 +125,18 @@ def home():
         shp_paths, join_cols = get_paths_n_joincol(shp_list)
         f = file.stream.read()
         lines = BytesIO(f)
-        org = csv_to_gdf(lines)
+        org = csv_to_gdf(lines, proj)
         org_cols = list(org.columns)
         org_cols.remove('geometry')
         org_cols = [name.lower() for name in org_cols]
         new_cols = org_cols + join_cols
 
         input_frames = [gpd.read_file(path) for path in shp_paths]
-        if proj == 'wgs':
-            new_input_frames = []
-            for gdf in input_frames:
-                gdf = gdf.to_crs(org.crs)
-                new_input_frames.append(gdf)
-            input_frames = new_input_frames
+        new_input_frames = []
+        for gdf in input_frames:
+            gdf = gdf.to_crs(org.crs)
+            new_input_frames.append(gdf)
+        input_frames = new_input_frames
         input_frames.insert(0, org)
         sjoin = reduce(sjoin_no_index, input_frames)
         sjoin.columns = sjoin.columns.str.lower()
@@ -134,15 +147,14 @@ def home():
                 sjoin.rename(columns={col : col[:-6]}, inplace=True)
             else:
                 pass
-        sjoin.drop('geometry', axis=1, inplace=True)
         sjoin = sjoin.loc[:, ~sjoin.columns.duplicated()]
-        sjoin = sjoin[new_cols]
-        result = df_2_geojson(sjoin, properties=new_cols)
+        sjoin2 = sjoin[new_cols]
+        result = df_2_geojson(sjoin, properties=new_cols, proj=proj)
         # make_result_map(sjoin)
         # result = pd.DataFrame(sjoin).to_csv(index=False, encoding='utf-8')
 
         result_id = uuid.uuid4()
-        result_dict = {str(result_id) : sjoin.to_json(orient='split')}
+        result_dict = {str(result_id) : sjoin2.to_json(orient='split')}
         session['tempdir'] = tempfile.mkdtemp()
         outfile = open(session['tempdir'] + '/filename', 'wb')
         pickle.dump(result_dict, outfile)
