@@ -7,7 +7,7 @@ from functools import reduce
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
-from flask import render_template, Response, request, redirect, url_for, send_file, flash, session, g
+from flask import render_template, Response, request, session
 from app import app, forms
 from app.models import Shapefiles
 
@@ -18,6 +18,7 @@ def csv_to_gdf(file, proj):
     '''
     df = pd.read_csv(file, delimiter=",")
     geometry = [Point(xy) for xy in zip(df.Lon, df.Lat)]
+    crs = None
     if proj == 'wgs':
         crs = {'init': 'epsg:4326'}
     if proj == 'stateplane':
@@ -73,6 +74,7 @@ def df_2_geojson(df, properties, proj):
     Turn a dataframe containing point data into a geojson formatted python dictionary
     '''
 
+    # change projection to web mercator
     if proj == 'stateplane':
         df = df.to_crs(epsg='4326')
         df = df.assign(lat2=df.geometry.y)
